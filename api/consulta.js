@@ -81,7 +81,18 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: 'El proveedor de IA no está disponible en este momento.' });
     }
 
-    const answer = typeof result.output_text === 'string' ? result.output_text.trim() : '';
+    const answer = (
+  typeof result.output_text === 'string'
+    ? result.output_text
+    : Array.isArray(result.output)
+      ? result.output
+          .filter(item => item.type === 'message')
+          .flatMap(item => Array.isArray(item.content) ? item.content : [])
+          .filter(item => item.type === 'output_text')
+          .map(item => item.text || '')
+          .join('\n')
+      : ''
+).trim();
     if (!answer) {
       return res.status(502).json({ error: 'El proveedor no devolvió una respuesta de texto utilizable.' });
     }
